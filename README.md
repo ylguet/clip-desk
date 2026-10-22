@@ -29,6 +29,8 @@ docs/
   architecture.png               # Component-level architecture of the three workflows
   scoping.pdf                    # Scoping deliverable (8 October 2026)
   presentation.pdf               # Class presentation slides
+docker-compose.yml               # Self-hosted n8n + Postgres
+.env.example                     # Settings template for Docker (copy to .env)
 ```
 
 ## Class requirements covered
@@ -73,6 +75,18 @@ When a field is blank, `Settings` uses the value in its `DEFAULTS` block.
 5. **Create the table once:** run the `Run Once: Setup` manual trigger to create `clipped_videos`. It is safe to run twice. You can delete those two nodes afterwards.
 6. **Daily schedule:** `Daily Trigger` is **disabled** in the export, so enable it if you want the 08:00 run. It uses the instance timezone (set it to Europe/Paris in the workflow settings if needed).
 7. **Publish/activate** the main workflow, then deploy `web/index.html` to any static host (Netlify was used).
+
+## Self-hosting with Docker
+
+The project runs on n8n Cloud, but you can also run it on your own computer with Docker Compose. `docker-compose.yml` starts **n8n** and **Postgres** with pinned image versions, named volumes (`n8n_data`, `postgres_data`) and a healthcheck on each service.
+
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and open it.
+2. In this folder, copy the settings file: `cp .env.example .env` (Windows: `copy .env.example .env`). Then set `POSTGRES_PASSWORD` and `N8N_ENCRYPTION_KEY` (32+ random characters) in `.env`.
+3. Start it: `docker compose up -d`. Then run `docker compose ps` until `postgres` and `n8n` both show **healthy**.
+4. Open http://localhost:5678 and create the owner account.
+5. Check that your data survives a restart: `docker compose down`, then `docker compose up -d`. Your account is still there.
+
+You can import the workflows from `workflows/` into this local n8n. Telegram and the web page need a public URL to reach it, though, so they won't work without a tunnel.
 
 ## Design choices
 
