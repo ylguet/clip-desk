@@ -1,0 +1,279 @@
+{
+  "name": "Clip Desk - Clip One Video",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Clip One Video\nCalled by the main Clip Desk workflow, once per video.\nInput: the video + the Vizard options. Output: the video + its clips.\nOnly credential needed here: **Vizard (Header Auth)**.",
+        "height": 200,
+        "width": 1500,
+        "color": 5
+      },
+      "id": "df158ba7-0a03-4c37-b563-d8ef4c7223d4",
+      "name": "Note Sub",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "f7c74657-8252-4e20-8c8b-b7da62846c81",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        64,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/create",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.assign({}, $json.vizardOptions, { videoUrl: $json.url, projectName: $json.title })) }}",
+        "options": {}
+      },
+      "id": "7d5cc76f-00ac-414d-8536-ce63f5f1ce5a",
+      "name": "Vizard Submit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        304,
+        304
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "jBPYZ0YBjCIYxwS7",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "706f79d7-4be5-5516-9f7c-a1b530a63e0e",
+              "leftValue": "={{ Number($json.code) === 2000 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5464607a-ac10-4ca8-aec8-7a2d506e5e90",
+      "name": "Submitted OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 60
+      },
+      "id": "e2cc9978-f785-4dd2-a49c-99e74e845821",
+      "name": "Wait 60s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        768,
+        208
+      ],
+      "webhookId": "1288e45d-48f7-4c4d-93ea-92657611ac10"
+    },
+    {
+      "parameters": {
+        "url": "=https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/query/{{ $('Vizard Submit').first().json.projectId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "01c38c2e-24ef-4f6e-90bc-64c5ab40f5ee",
+      "name": "Vizard Get Clips",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        992,
+        208
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "jBPYZ0YBjCIYxwS7",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9fc948b2-741c-5cc8-b608-f28051d6ef4b",
+              "leftValue": "={{ (Number($json.code) === 1000 || (Number($json.code) === 2000 && !($json.videos || []).length)) && $runIndex < 60 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "046042e5-76a2-47b5-ac85-87f99b28cca7",
+      "name": "Still Processing?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Runs once per video, after Vizard has finished (or refused / timed out)\nconst res = $json;\nconst submit = $('Vizard Submit').first().json;\nconst v = $('When Executed by Another Workflow').first().json;\n\nconst clips = (res.videos || []).map(c => ({\n  title: c.title,\n  url: c.videoUrl,\n  editorUrl: c.clipEditorUrl,\n  viralScore: c.viralScore,\n  seconds: Math.round((c.videoMsDuration || 0) / 1000),\n}));\n\nlet status;\nif (submit.code && Number(submit.code) !== 2000) {\n  status = `Vizard refused the video (code ${submit.code}${submit.errMsg ? ': ' + submit.errMsg : ''})`;\n} else if (Number(res.code) === 2000) {\n  status = 'ok';\n} else if (Number(res.code) === 1000) {\n  status = 'still processing when the time limit was reached';\n} else {\n  status = `Vizard error ${res.code ?? ''} ${res.errMsg || (res.error && res.error.message) || ''}`.trim();\n}\n\nreturn {\n  json: {\n    videoId: v.videoId,\n    title: v.title,\n    channel: v.channel,\n    views: v.views,\n    lengthMinutes: v.lengthMinutes,\n    url: v.url,\n    requestedBy: v.requestedBy,\n    status,\n    clips,\n  },\n};\n"
+      },
+      "id": "f687c63f-d113-46d5-aa3f-f796ef7cecda",
+      "name": "Format Clips",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        400
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Vizard Submit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vizard Submit": {
+      "main": [
+        [
+          {
+            "node": "Submitted OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submitted OK?": {
+      "main": [
+        [
+          {
+            "node": "Wait 60s",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Clips",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 60s": {
+      "main": [
+        [
+          {
+            "node": "Vizard Get Clips",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vizard Get Clips": {
+      "main": [
+        [
+          {
+            "node": "Still Processing?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still Processing?": {
+      "main": [
+        [
+          {
+            "node": "Wait 60s",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Clips",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "855d2ed0-67f1-4d58-af62-0e433b9de073",
+  "meta": {
+    "instanceId": "b445a7db32e8863607e0a55c2ab09fecba48257fe92b7a51bc23423a8c56dc16"
+  },
+  "nodeGroups": [],
+  "id": "i4wxavd20lE7fNWa",
+  "tags": []
+}

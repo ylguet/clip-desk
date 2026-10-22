@@ -1,0 +1,1231 @@
+{
+  "name": "Clip Desk - Main",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 1 · Triggers (4 ways in)\n**Web page** (webhook), **n8n form**, **Telegram chat** and the **daily schedule**.\nAll four end in the same *Settings* node.",
+        "height": 1500,
+        "width": 1560,
+        "color": 7
+      },
+      "id": "bb7d82b2-5050-4160-b904-001ae2b551a1",
+      "name": "Note Triggers",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Chat trigger + AI\nA message to the Telegram bot goes to Gemini, which turns plain words into the same filters the web page sends.\nOnly the Telegram user ID(s) listed in the trigger can use the bot.",
+        "height": 300,
+        "width": 1180,
+        "color": 6
+      },
+      "id": "37db7e83-e6ed-44e3-a172-30dbdfefc370",
+      "name": "Note Telegram",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        32,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2 · API call: YouTube Data API\nSearch, fetch stats, skip videos already in the database, keep the best.",
+        "height": 300,
+        "width": 1000,
+        "color": 4
+      },
+      "id": "47eb8569-ca9b-4023-afa0-f939e67710f2",
+      "name": "Note YouTube",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Database: clipped_videos\nEvery video that was sent to Vizard is saved here, so the same video is never clipped twice.",
+        "height": 440,
+        "width": 880,
+        "color": 5
+      },
+      "id": "e6ec943d-f466-467f-9f97-e5c8800445c4",
+      "name": "Note Database",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2608,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3 · Sub-workflow: Clip One Video\nVizard clipping runs in its own workflow, once per video, so each video gets a fresh 60-check limit.",
+        "height": 120,
+        "width": 520,
+        "color": 5
+      },
+      "id": "cf368d79-f986-42e5-8597-a8e0362bc2e4",
+      "name": "Note Vizard",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2672,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 4 · Delivery\nOne email with download + edit links. No clips means no email.",
+        "height": 220,
+        "width": 500,
+        "color": 6
+      },
+      "id": "ab2b09a5-7965-4efa-9d9f-f964aac56e38",
+      "name": "Note Delivery",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2608,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## One-time setup\nClick *Execute workflow* on this trigger once to create the clipped_videos table. Safe to run twice. Delete these two nodes afterwards.",
+        "height": 220,
+        "width": 520,
+        "color": 3
+      },
+      "id": "2b0bc6c1-bc78-4612-8881-9f8ab530063b",
+      "name": "Note Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clip-request",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "3f11bfad-18cd-46a2-a869-1f54affb1d21",
+      "name": "Page Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        64,
+        208
+      ],
+      "webhookId": "ba279321-9a7f-5c57-aa49-3c3f6f9076fb"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3c3278ec-c9a1-5581-abdd-2bcbac289707",
+              "leftValue": "={{ $json.body['Access code'] }}",
+              "rightValue": "CHANGE_ME_ACCESS_CODE",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a52f9927-f5bf-4561-88b6-a0bd847fb1e5",
+      "name": "Access Code OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        304,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "31b91619-4aa3-4197-8f35-0e7a889cc077",
+      "name": "Reply OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        544,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false }) }}",
+        "options": {
+          "responseCode": 403,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "380a1eb6-54e6-4d28-8902-2c411cad243a",
+      "name": "Reply Denied",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        544,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "userIds": "5366098845"
+        }
+      },
+      "id": "7ffa00fe-e626-4214-89e3-f2f0ce37e9be",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        560
+      ],
+      "webhookId": "5e4528c0-75fa-54ef-b061-0a604237dcc0",
+      "credentials": {
+        "telegramApi": {
+          "id": "jR3BXpsZH27nsKbK",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You turn a short chat message into filters for a YouTube clipping tool.\nReply with ONE JSON object and nothing else: no markdown, no explanation.\n\nSet \"isClipRequest\" to true only if the message asks to find or clip YouTube videos. For a greeting, a question or anything else, reply {\"isClipRequest\": false} and nothing more.\n\nKeys you may add (leave out any key the message does not mention, never guess):\n\"Keyword (optional)\": a few search words, for example \"football interview\"\n\"What should the clips be about?\": the kind of moments to clip, if the message says\n\"Language\": English, Spanish, French, German or Portuguese\n\"Region\": US, GB, FR, CA, DE or IN\n\"Category\": Any, Comedy, Sport, News & Politics, Education, Entertainment, People & Blogs or Gaming\n\"Published within\": Last 24 hours, Last week, Last month, Last year or Last 5 years\n\"Sort by\": Most viewed, Most recent or Best match\n\"Minimum views\": Any, 100k+, 1M+ or 10M+\n\"Max video length\": 5 minutes, 10 minutes, 15 minutes or 20 minutes\n\"Number of videos\": 1, 2 or 3\n\"Clips per video\": 3, 5 or 10\n\"Clip length\": Auto, Under 30s, 30-60s or 60-90s\n\"Aspect ratio\": 9:16 Vertical (TikTok, Reels, Shorts), 1:1 Square or 16:9 Horizontal\n\"Email\": an email address, only if the message contains one\n\nUse the option text exactly as written above.\n\nExample message: 2 french podcast videos about football, 3 clips each, send to sam@example.com\nExample reply: {\"isClipRequest\": true, \"Language\": \"French\", \"Keyword (optional)\": \"podcast football\", \"Number of videos\": \"2\", \"Clips per video\": \"3\", \"Email\": \"sam@example.com\"}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "3ebf82b9-df9f-4c5c-ab9b-1c29c5281677",
+      "name": "Understand Message",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        304,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "id": "d0775601-4826-4737-b101-dcf3e20d2ee5",
+      "name": "Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        320,
+        752
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "8S764tRT2a6AZqJd",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Turn the AI's JSON reply into the same fields the web form sends.\nconst msg = $('Telegram Trigger').first().json.message || {};\nconst chatId = msg.chat ? msg.chat.id : null;\n\nconst reply = String($json.text ?? ($json.response && $json.response.text) ?? '');\n\nlet data = {};\ntry {\n  const cleaned = reply.replace(/```json|```/gi, '');\n  const start = cleaned.indexOf('{');\n  const end = cleaned.lastIndexOf('}');\n  data = JSON.parse(cleaned.slice(start, end + 1));\n} catch (e) {\n  data = {};\n}\n\nconst isClipRequest = data.isClipRequest === true;\ndelete data.isClipRequest;\n\n// Keep only plain, non-empty values; drop an email that does not look like one\nconst out = {};\nfor (const [k, v] of Object.entries(data)) {\n  if (v === null || v === undefined || typeof v === 'object') continue;\n  const s = String(v).trim();\n  if (s) out[k] = s;\n}\nif (out['Email'] && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(out['Email'])) delete out['Email'];\n\nconst what = [out['Language'], out['Keyword (optional)']].filter(Boolean).join(' ');\nconst ack = isClipRequest\n  ? `On it. Looking for ${what ? what + ' ' : ''}videos. If clips can be made, they will be emailed to ${out['Email'] || 'the default address'}. If nothing arrives within an hour, no clips could be made, so try again with different filters.`\n  : '';\n\nreturn { json: { ...out, isClipRequest, ack, telegramChatId: chatId } };\n"
+      },
+      "id": "d9aa25fd-196d-4b00-9dcd-5a80c71b6c05",
+      "name": "Parse Chat Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "db16f0f2-efa6-520c-84c9-e198ecc314b8",
+              "leftValue": "={{ $json.isClipRequest }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "23b9f71c-2329-43aa-b69c-f4538acfb439",
+      "name": "Clip Request?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegramChatId }}",
+        "text": "={{ $json.ack }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "8db68513-f775-411e-904c-3522f602054c",
+      "name": "Reply Accepted",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        480
+      ],
+      "webhookId": "439f4b6f-42fd-4fe3-869e-5c2024117926",
+      "credentials": {
+        "telegramApi": {
+          "id": "jR3BXpsZH27nsKbK",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegramChatId }}",
+        "text": "I make short clips from YouTube videos. Tell me what you want, for example:\n2 french podcast videos about football, 3 clips each\nor: english interview videos from the last year, over 1M views",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "98e4973f-b14a-4f3d-847b-7df28e5fa8c3",
+      "name": "Reply Help",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        640
+      ],
+      "webhookId": "03ff4134-571b-40a0-a384-962b4e8a4a59",
+      "credentials": {
+        "telegramApi": {
+          "id": "jR3BXpsZH27nsKbK",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "2619bed5-a2bf-41bb-83ab-37ff71542c38",
+      "name": "Daily Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        864
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "formTitle": "Clip Desk",
+        "formDescription": "Finds a YouTube video that matches your filters, clips it with AI and emails you the clips. Leave a field blank to use the default.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "you@example.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Language",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "English"
+                  },
+                  {
+                    "option": "Spanish"
+                  },
+                  {
+                    "option": "French"
+                  },
+                  {
+                    "option": "German"
+                  },
+                  {
+                    "option": "Portuguese"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Region",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "US"
+                  },
+                  {
+                    "option": "GB"
+                  },
+                  {
+                    "option": "FR"
+                  },
+                  {
+                    "option": "CA"
+                  },
+                  {
+                    "option": "DE"
+                  },
+                  {
+                    "option": "IN"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Keyword (optional)",
+              "placeholder": "podcast, interview, explained"
+            },
+            {
+              "fieldLabel": "Category",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Any"
+                  },
+                  {
+                    "option": "Comedy"
+                  },
+                  {
+                    "option": "Sport"
+                  },
+                  {
+                    "option": "News & Politics"
+                  },
+                  {
+                    "option": "Education"
+                  },
+                  {
+                    "option": "Entertainment"
+                  },
+                  {
+                    "option": "People & Blogs"
+                  },
+                  {
+                    "option": "Gaming"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Published within",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Last 24 hours"
+                  },
+                  {
+                    "option": "Last week"
+                  },
+                  {
+                    "option": "Last month"
+                  },
+                  {
+                    "option": "Last year"
+                  },
+                  {
+                    "option": "Last 5 years"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Sort by",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Most viewed"
+                  },
+                  {
+                    "option": "Most recent"
+                  },
+                  {
+                    "option": "Best match"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Minimum views",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Any"
+                  },
+                  {
+                    "option": "100k+"
+                  },
+                  {
+                    "option": "1M+"
+                  },
+                  {
+                    "option": "10M+"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Max video length",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "5 minutes"
+                  },
+                  {
+                    "option": "10 minutes"
+                  },
+                  {
+                    "option": "15 minutes"
+                  },
+                  {
+                    "option": "20 minutes"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Number of videos",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "1"
+                  },
+                  {
+                    "option": "2"
+                  },
+                  {
+                    "option": "3"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Clips per video",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "3"
+                  },
+                  {
+                    "option": "5"
+                  },
+                  {
+                    "option": "10"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Clip length",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Auto"
+                  },
+                  {
+                    "option": "Under 30s"
+                  },
+                  {
+                    "option": "30-60s"
+                  },
+                  {
+                    "option": "60-90s"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Aspect ratio",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "9:16 Vertical (TikTok, Reels, Shorts)"
+                  },
+                  {
+                    "option": "1:1 Square"
+                  },
+                  {
+                    "option": "16:9 Horizontal"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "What should the clips be about?",
+              "fieldType": "textarea",
+              "placeholder": "The funniest reactions, advice about money"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "426c2a05-8638-4f6a-aa0c-093e30362ce6",
+      "name": "Clip Request Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        64,
+        1072
+      ],
+      "webhookId": "022e09ff-fde0-42f3-a654-1244aea22969"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ✏️ DEFAULTS — used on scheduled runs, and for anything a request leaves blank\nconst DEFAULTS = {\n  email: 'ylguetari@gmail.com',        // where clips go when nobody types an address\n  senderEmail: 'ylguetari@gmail.com',  // must be the Gmail account used in the SMTP credential\n  region: 'US',\n  keyword: 'interview',\n  numberOfVideos: 1,\n  clipLength: 'Auto',\n  language: 'English',\n  publishedWithin: 'Last 5 years',\n  category: 'Any',\n  sortBy: 'Most viewed',\n  maxVideoLength: '15 minutes',\n  minViews: 'Any',\n  aspectRatio: '9:16 Vertical (TikTok, Reels, Shorts)',\n  clipsPerVideo: '5',\n  clipTopic: '',\n};\n\n// This node receives data from FOUR places:\n//  - the Clip Desk web page (fields arrive inside \"body\")\n//  - the n8n form (fields arrive at the top level)\n//  - the Telegram chat (fields arrive at the top level, plus telegramChatId)\n//  - the daily schedule (no fields, so every default above is used)\nconst raw = $input.first().json;\nconst input = raw.body || raw;\n\n// Read a field by its exact label, falling back to the default above\nfunction field(label, fallback) {\n  const v = input[label];\n  return (v === undefined || v === null || v === '') ? fallback : v;\n}\n\nconst LANGUAGES = { 'English': 'en', 'Spanish': 'es', 'French': 'fr', 'German': 'de', 'Portuguese': 'pt' };\nconst WINDOWS   = { 'Last 24 hours': 1, 'Last week': 7, 'Last month': 30, 'Last year': 365, 'Last 5 years': 1825 };\nconst CATEGORIES = { 'Any': '', 'Gaming': '20', 'Comedy': '23', 'Sport': '17', 'News & Politics': '25', 'Education': '27', 'Entertainment': '24', 'People & Blogs': '22' };\nconst SORTS     = { 'Most viewed': 'viewCount', 'Most recent': 'date', 'Best match': 'relevance' };\nconst VIEWS     = { 'Any': 0, '100k+': 100000, '1M+': 1000000, '10M+': 10000000 };\nconst RATIOS    = { '9:16 Vertical (TikTok, Reels, Shorts)': 1, '1:1 Square': 2, '16:9 Horizontal': 4 };\nconst LENGTHS   = { 'Auto': [0], 'Under 30s': [1], '30-60s': [2], '60-90s': [3] };\n\nconst language   = LANGUAGES[field('Language', DEFAULTS.language)] || 'en';\nconst days       = WINDOWS[field('Published within', DEFAULTS.publishedWithin)] || 1825;\nconst categoryId = CATEGORIES[field('Category', DEFAULTS.category)] || '';\nconst order      = SORTS[field('Sort by', DEFAULTS.sortBy)] || 'viewCount';\nconst minViews   = VIEWS[field('Minimum views', DEFAULTS.minViews)] || 0;\nconst ratio      = RATIOS[field('Aspect ratio', DEFAULTS.aspectRatio)] || 1;\nconst preferLength = LENGTHS[field('Clip length', DEFAULTS.clipLength)] || [0];\n\nconst maxMinutes    = parseInt(field('Max video length', DEFAULTS.maxVideoLength), 10) || 15;\nconst clipsPerVideo = Math.min(Math.max(parseInt(field('Clips per video', DEFAULTS.clipsPerVideo), 10) || 5, 1), 10);\nconst numberOfVideos = Math.min(Math.max(parseInt(field('Number of videos', DEFAULTS.numberOfVideos), 10) || 1, 1), 3);\n\nconst keyword   = String(field('Keyword (optional)', DEFAULTS.keyword)).trim();\nconst clipTopic = String(field('What should the clips be about?', DEFAULTS.clipTopic)).trim();\nconst region    = field('Region', DEFAULTS.region);\n\nconst publishedAfter = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('.')[0] + 'Z';\n\n// Everything the YouTube Search node sends\nconst searchParams = {\n  part: 'snippet',\n  type: 'video',\n  order: order,\n  videoDuration: 'medium',\n  relevanceLanguage: language,\n  regionCode: region,\n  publishedAfter: publishedAfter,\n  maxResults: 50,\n};\nif (keyword) searchParams.q = keyword;\nif (categoryId) searchParams.videoCategoryId = categoryId;\n\n// Everything the Vizard Submit node sends, apart from the per-video bits\nconst vizardOptions = {\n  videoType: 2,\n  lang: language,\n  preferLength: preferLength,\n  ratioOfClip: ratio,\n  maxClipNumber: clipsPerVideo,\n  subtitleSwitch: 1,\n  headlineSwitch: 1,\n};\nif (clipTopic) vizardOptions.keywords = clipTopic;\n\nlet triggeredBy = 'schedule';\nif (input.telegramChatId) triggeredBy = 'telegram';\nelse if (raw.body) triggeredBy = 'page';\nelse if (input['Email']) triggeredBy = 'form';\n\nreturn [{\n  json: {\n    email: field('Email', DEFAULTS.email),\n    senderEmail: DEFAULTS.senderEmail,\n    language: language,\n    region: region,\n    keyword: keyword,\n    numberOfVideos: numberOfVideos,\n    maxVideoMinutes: maxMinutes,\n    minViews: minViews,\n    publishedAfter: publishedAfter,\n    searchParams: searchParams,\n    vizardOptions: vizardOptions,\n    triggeredBy: triggeredBy,\n  },\n}];\n"
+      },
+      "id": "ff5cb355-c66c-43a4-9d15-4e353f344122",
+      "name": "Settings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        864
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify($json.searchParams) }}",
+        "options": {}
+      },
+      "id": "19d33069-0b2b-4297-90e8-d4ee9a0bbfa6",
+      "name": "YouTube Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1632,
+        864
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "5Y4aXEqjE0HPVKJ6",
+          "name": "Query Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/videos",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet,statistics,contentDetails"
+            },
+            {
+              "name": "id",
+              "value": "={{ ($json.items || []).map(i => i.id.videoId).join(',') }}"
+            },
+            {
+              "name": "maxResults",
+              "value": "50"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac83a747-e5f5-436a-8708-114905be32e3",
+      "name": "YouTube Video Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1840,
+        864
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "5Y4aXEqjE0HPVKJ6",
+          "name": "Query Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "clipped_videos"
+        },
+        "returnAll": true
+      },
+      "id": "756d1ba4-c284-407a-b546-d1a2bbe48fa0",
+      "name": "Get Past Videos",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2064,
+        864
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Keep only videos that can actually be clipped and have not been clipped before,\n// then take the most viewed ones.\nconst settings = $('Settings').first().json;\nconst items = $('YouTube Video Stats').first().json.items || [];\nconst lang = settings.language || 'en';\nconst maxMinutes = settings.maxVideoMinutes || 20;\nconst minViews = settings.minViews || 0;\n\n// Video IDs already stored in the clipped_videos data table (empty table = empty set)\nconst alreadyDone = new Set(\n  $('Get Past Videos').all().map(i => i.json.videoId).filter(Boolean)\n);\n\n// YouTube returns durations like PT12M34S — turn that into minutes\nfunction minutes(iso) {\n  const m = /^PT(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?$/.exec(iso || '');\n  if (!m) return 99999; // unparseable: treat as too long, to protect credits\n  return Number(m[1] || 0) * 60 + Number(m[2] || 0) + Number(m[3] || 0) / 60;\n}\n\nconst videos = items\n  .filter(v => !alreadyDone.has(v.id))\n  .filter(v => v.snippet.liveBroadcastContent === 'none')\n  .filter(v => v.snippet.categoryId !== '10')\n  .filter(v => {\n    const audio = v.snippet.defaultAudioLanguage || v.snippet.defaultLanguage || '';\n    return audio.toLowerCase().startsWith(lang);\n  })\n  .filter(v => minutes(v.contentDetails.duration) <= maxMinutes)\n  .filter(v => Number(v.statistics.viewCount || 0) >= minViews)\n  .map(v => ({\n    videoId: v.id,\n    title: v.snippet.title,\n    channel: v.snippet.channelTitle,\n    views: Number(v.statistics.viewCount || 0),\n    lengthMinutes: Math.round(minutes(v.contentDetails.duration) * 10) / 10,\n    url: 'https://www.youtube.com/watch?v=' + v.id,\n    vizardOptions: settings.vizardOptions,\n    requestedBy: settings.triggeredBy,\n  }))\n  .sort((a, b) => b.views - a.views)\n  .slice(0, settings.numberOfVideos);\n\nif (videos.length === 0) {\n  throw new Error('Nothing new matched. Try a wider time window, a lower minimum view count, or a longer max length. (Videos already clipped before are skipped.)');\n}\n\nreturn videos.map(v => ({ json: v }));\n"
+      },
+      "id": "bad88301-a859-43b2-9e50-725b8564f104",
+      "name": "Pick Most Viral",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2288,
+        864
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "2dd3a45e-63d6-422e-8936-bdcc934b3cda",
+      "name": "Loop Over Videos",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2496,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "i4wxavd20lE7fNWa",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/i4wxavd20lE7fNWa",
+          "cachedResultName": "Clip Desk - Clip One Video"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "41ae3085-68ba-4c75-aa62-27bcd38d918e",
+      "name": "Clip One Video",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        2752,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// One flat row for the clipped_videos data table (no arrays allowed in a row)\nconst v = $json;\nconst clips = Array.isArray(v.clips) ? v.clips : [];\nreturn {\n  json: {\n    videoId: v.videoId || '',\n    title: String(v.title || '').slice(0, 200),\n    channel: String(v.channel || ''),\n    views: Number(v.views || 0),\n    status: clips.length ? 'ok' : (v.status && v.status !== 'ok' ? String(v.status) : 'no clips'),\n    clipCount: clips.length,\n    requestedBy: String(v.requestedBy || ''),\n  },\n};\n"
+      },
+      "id": "23df7914-1385-45a1-af4c-dc90cd98e800",
+      "name": "Make Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "clipped_videos"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": null,
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "04c09ea0-0a9f-4914-b997-0498c5451c30",
+      "name": "Remember Video",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3232,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build one HTML email from the videos that actually produced clips.\n// If no video produced a clip, return nothing so no email is sent.\nconst settings = $('Settings').first().json;\nconst videos = $input.all()\n  .map(i => i.json)\n  .filter(v => v.clips && v.clips.length > 0);\n\nif (videos.length === 0) {\n  return [];\n}\n\nconst esc = s => String(s ?? '')\n  .replace(/&/g, '&amp;').replace(/</g, '&lt;')\n  .replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n\nconst date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });\nconst totalClips = videos.reduce((n, v) => n + v.clips.length, 0);\n\nlet html = `<div style=\"font-family:Arial,sans-serif;max-width:640px;color:#222\">`;\nhtml += `<h2>🎬 Your clips – ${date}</h2>`;\nhtml += `<p>${totalClips} clip(s) generated from ${videos.length} video(s).</p>`;\n\nfor (const v of videos) {\n  html += `<hr><h3 style=\"margin-bottom:4px\">${esc(v.title)}</h3>`;\n  html += `<p style=\"margin-top:0;color:#666\">${esc(v.channel)} · ${Number(v.views || 0).toLocaleString('en-US')} views`;\n  if (v.url) html += ` · <a href=\"${esc(v.url)}\">original video</a>`;\n  html += `</p><ol>`;\n  for (const c of v.clips) {\n    html += `<li style=\"margin-bottom:10px\"><b>${esc(c.title)}</b><br>`;\n    html += `Viral score ${esc(c.viralScore)}/10 · ${c.seconds}s<br>`;\n    html += `<a href=\"${esc(c.url)}\">⬇️ Download</a> · <a href=\"${esc(c.editorUrl)}\">✏️ Edit in Vizard</a></li>`;\n  }\n  html += `</ol>`;\n}\n\nhtml += `<p style=\"color:#999;font-size:12px\">Download links expire after 7 days. Review each clip before posting it.</p></div>`;\n\nreturn [{\n  json: {\n    to: settings.email,\n    subject: `🎬 ${totalClips} new clip(s) ready – ${date}`,\n    html,\n  },\n}];\n"
+      },
+      "id": "8d7aa10e-168c-4a1e-a65c-bec1ab82b095",
+      "name": "Build Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2672,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $('Settings').first().json.senderEmail }}",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "7840651a-459f-4b6b-bf28-b1c7fb7a02d7",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2912,
+        608
+      ],
+      "webhookId": "a87f854d-ae70-486b-8443-b7a7d24616be",
+      "credentials": {
+        "smtp": {
+          "id": "E6HwD5oFKVrvVqAd",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "cdd7a831-c0e1-4469-9566-e80d17cee8cc",
+      "name": "Run Once: Setup",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        64,
+        1664
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "clipped_videos",
+        "columns": {
+          "column": [
+            {
+              "name": "videoId"
+            },
+            {
+              "name": "title"
+            },
+            {
+              "name": "channel"
+            },
+            {
+              "name": "views",
+              "type": "number"
+            },
+            {
+              "name": "status"
+            },
+            {
+              "name": "clipCount",
+              "type": "number"
+            },
+            {
+              "name": "requestedBy"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        }
+      },
+      "id": "cacba8c5-fbb3-4dae-a647-cbc1416a45a1",
+      "name": "Create Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        1664
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Page Request": {
+      "main": [
+        [
+          {
+            "node": "Access Code OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Access Code OK?": {
+      "main": [
+        [
+          {
+            "node": "Reply OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply Denied",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply OK": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Understand Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Understand Message": {
+      "main": [
+        [
+          {
+            "node": "Parse Chat Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Understand Message",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Chat Request": {
+      "main": [
+        [
+          {
+            "node": "Clip Request?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clip Request?": {
+      "main": [
+        [
+          {
+            "node": "Reply Accepted",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply Help",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Trigger": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clip Request Form": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "YouTube Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube Search": {
+      "main": [
+        [
+          {
+            "node": "YouTube Video Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube Video Stats": {
+      "main": [
+        [
+          {
+            "node": "Get Past Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Past Videos": {
+      "main": [
+        [
+          {
+            "node": "Pick Most Viral",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Most Viral": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Videos": {
+      "main": [
+        [
+          {
+            "node": "Build Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clip One Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clip One Video": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Videos",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Make Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make Row": {
+      "main": [
+        [
+          {
+            "node": "Remember Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Once: Setup": {
+      "main": [
+        [
+          {
+            "node": "Create Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "pkiCEOP8AsxquPnU",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "78c0b277-3e78-4296-9e09-1f0ee4f9c70f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b445a7db32e8863607e0a55c2ab09fecba48257fe92b7a51bc23423a8c56dc16"
+  },
+  "nodeGroups": [],
+  "id": "mbjl7basKuT6SdL0",
+  "tags": []
+}

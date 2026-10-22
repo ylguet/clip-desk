@@ -1,0 +1,89 @@
+{
+  "name": "Clip Desk - Error Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Error alert\nSet this as the **Error Workflow** in the settings of the main Clip Desk workflow. When a run fails, the project owner gets an email with the failing node and a link to the run.",
+        "height": 200,
+        "width": 700,
+        "color": 3
+      },
+      "id": "5fa43e5a-1f15-46d4-9fbf-3c97df7b83c4",
+      "name": "Note Error",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "3b4d2ca0-7445-4c05-b9ae-cca789c3cd6d",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        64,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "ylguetari@gmail.com",
+        "toEmail": "ylguetari@gmail.com",
+        "subject": "=Clip Desk failed: {{ $json.workflow.name }}",
+        "emailFormat": "text",
+        "text": "=The workflow \"{{ $json.workflow.name }}\" failed.\n\nFailing node: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nRun: {{ $json.execution.url }}\n\nNobody was emailed any clips for this run.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "32f7473b-94da-4b45-aa18-4c86778a185b",
+      "name": "Alert Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        304,
+        304
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "webhookId": "addb5b82-4fca-4021-ad27-0c39f1089607",
+      "credentials": {
+        "smtp": {
+          "id": "E6HwD5oFKVrvVqAd",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Alert Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7a000c81-bd2f-4ac9-9407-68620eddf4fd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b445a7db32e8863607e0a55c2ab09fecba48257fe92b7a51bc23423a8c56dc16"
+  },
+  "nodeGroups": [],
+  "id": "pkiCEOP8AsxquPnU",
+  "tags": []
+}
